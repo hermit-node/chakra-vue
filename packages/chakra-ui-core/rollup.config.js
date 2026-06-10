@@ -1,36 +1,27 @@
-import fs from 'fs'
-import path from 'path'
-import babel from 'rollup-plugin-babel'
-import resolve from 'rollup-plugin-node-resolve'
-import cjs from 'rollup-plugin-commonjs'
-import buble from 'rollup-plugin-buble'
+import fs from 'node:fs'
+import path from 'node:path'
+import { createRequire } from 'node:module'
+
+import { babel } from '@rollup/plugin-babel'
+import { nodeResolve } from '@rollup/plugin-node-resolve'
+import commonjs from '@rollup/plugin-commonjs'
 import scss from 'rollup-plugin-scss'
 import vue from 'rollup-plugin-vue'
-import pkg from './package.json'
 
-// Plugins
-const bubelConfig = buble({
-  objectAssign: 'Object.assign',
-  jsx: 'h',
-  transforms: {
-    dangerousTaggedTemplateString: true,
-    dangerousForOf: true
-  }
-})
+const require = createRequire(import.meta.url)
+const pkg = require('./package.json')
 
+// Babel
 const babelConfig = babel({
   exclude: /node_modules/,
-  runtimeHelpers: true,
-  babelrc: false,
+  babelHelpers: 'bundled',
   presets: [
     [
-      '@babel/preset-env', {
+      '@babel/preset-env',
+      {
         modules: false
       }
     ]
-  ],
-  plugins: [
-    'babel-plugin-transform-es2015-for-of'
   ]
 })
 
@@ -48,22 +39,17 @@ const externals = [
 const commons = {
   external: externals,
   plugins: [
-    resolve({
+    nodeResolve({
       extensions: ['.vue', '.js']
     }),
     scss({
       output: false
     }),
-    bubelConfig,
-    babelConfig,
     vueConfig,
-    cjs({
-      namedExports: {
-        'node_modules/object-assign/index.js': ['assign']
-      },
+    babelConfig,
+    commonjs({
       include: /node_modules/
     })
-    // production && terser()
   ]
 }
 

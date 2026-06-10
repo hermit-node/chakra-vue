@@ -11,15 +11,21 @@ import { colorModeObserver, mode } from '../utils'
 
 /**
  * Chakra-ui Component library plugin
+ * Vue 3 first-layer migration:
+ * - Vue.prototype -> app.config.globalProperties
+ * - Vue.directive -> app.directive
+ * - Vue.use -> app.use
+ * - Vue.mixin -> app.mixin
+ *
  * @type {import("../../types").ChakraPlugin}
  */
 const Chakra = {
   /**
    *
-   * @param {Vue} Vue
+   * @param {import('vue').App} app
    * @param {import("../../types").Options} options
    */
-  install (Vue, options = {}) {
+  install (app, options = {}) {
     let packIcons = {}
     const extendedIcons = options.icons ? options.icons.extend || {} : {}
 
@@ -36,21 +42,21 @@ const Chakra = {
     // Recursively merge extended theme variables
     const mergedTheme = toCSSVar(merge(defaultTheme, options.extendTheme))
 
-    Vue.directive('chakra', createClientDirective(mergedTheme))
+    app.directive('chakra', createClientDirective(mergedTheme))
 
-    // Bind theme and icons to prototype
-    Vue.prototype.$chakra = {
+    // Bind theme and icons to global properties
+    app.config.globalProperties.$chakra = {
       theme: mergedTheme,
       icons
     }
 
     const toast = useToast()
-    Vue.prototype.$toast = toast
+    app.config.globalProperties.$toast = toast
 
     /** Install dependent plugins */
-    Vue.use(VScrollLock)
+    app.use(VScrollLock)
 
-    Vue.mixin({
+    app.mixin({
       computed: {
         chakraColorMode () {
           return colorModeObserver.colorMode
@@ -61,7 +67,7 @@ const Chakra = {
         chakraToggleColorMode () {
           return colorModeObserver.toggleColorMode
         },
-        $mode: vm => (lightValue, darkValue) => mode(lightValue, darkValue, colorModeObserver)
+        $mode: () => (lightValue, darkValue) => mode(lightValue, darkValue, colorModeObserver)
       }
     })
   }
